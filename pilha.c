@@ -168,6 +168,7 @@ int main(){
     return 0;
 }
 
+// DROP TABLE bancos2;
 // CREATE TABLE IF NOT EXISTS bancos2 (
 //     id SERIAL PRIMARY KEY,
 //     valor INT
