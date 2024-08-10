@@ -16,18 +16,6 @@ void iniciar_pilha(PILHA *p){
     p->topo = NULL;
 }
 
-// void inserir_elemento(PILHA *p, int elemento){
-//     NO *ptr = (NO*) malloc(sizeof(NO));
-
-//     if(ptr){
-//         ptr->dado = elemento;
-//         ptr->prox = p->topo;
-//         p->topo = ptr;
-//     } else {
-//         printf("Erro ao alocar memória.\n");
-//     }
-// }
-
 void inserir_elemento(PILHA *p, int elemento, PGconn *conn){
     NO *ptr = (NO*) malloc(sizeof(NO));
 
@@ -36,47 +24,24 @@ void inserir_elemento(PILHA *p, int elemento, PGconn *conn){
         ptr->prox = p->topo;
         p->topo = ptr;
 
+        // Cria a string de comando SQL para remover o elemento do banco de dados
         char sql[256];
         snprintf(sql, sizeof(sql), "INSERT INTO bancos2 (valor) VALUES (%d);", elemento);
 
+        // Executa o comando SQL
         PGresult *res = PQexec(conn, sql);
 
+        // Verifica o resultado da execução
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             fprintf(stderr, "Erro ao inserir no banco de dados: %s\n", PQerrorMessage(conn));
         }
 
+        // Libera o resultado
         PQclear(res);
     } else {
         printf("Erro ao alocar memória.\n");
     }
 }
-
-// int remover_Elemento(PILHA *p){
-//     int elemento;
-//     NO *ptr = p->topo;
-
-//     if(ptr){
-//        p->topo = p->topo->prox;
-//        ptr->prox = NULL;
-//        elemento = ptr->dado;
-//        free(ptr);
-//        return elemento;
-
-//        char sql[256];
-//         snprintf(sql, sizeof(sql), "INSERT INTO bancos2 (valor) VALUES (%d);", elemento);
-
-//         PGresult *res = PQexec(conn, sql);
-
-//         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-//             fprintf(stderr, "Erro ao inserir no banco de dados: %s\n", PQerrorMessage(conn));
-//         }
-
-//         PQclear(res);
-//     } else {
-//         printf("\nPilha vazia.\n");
-//         return 1;
-//     }
-// }
 
 int remover_Elemento(PILHA *p, PGconn *conn) {
     int elemento;
@@ -110,18 +75,33 @@ int remover_Elemento(PILHA *p, PGconn *conn) {
     }
 }
 
-void imprimir(PILHA *p){
-    NO *ptr = p->topo;
+void imprimir(PILHA *p, PGconn *conn){
 
-    if(ptr){
-        while (ptr != NULL){
-            printf("\n%d", ptr->dado);
-            ptr = ptr->prox;
-        }
-        printf("\n");
-    } else {
-        printf("\nPilha vazia.\n");
+    const char *sql = "SELECT valor FROM bancos2;";
+
+    // Executa o comando SQL
+    PGresult *res = PQexec(conn, sql);
+
+    // Verifica o resultado da execução
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "Erro ao executar consulta: %s\n", PQerrorMessage(conn));
+        PQclear(res);
+        return;
     }
+
+    // Obtém o número de tuplas (linhas) retornadas
+    int numRows = PQntuples(res);
+
+    // Imprime cada linha retornada
+    for (int i = 0; i < numRows; i++) {
+        // Obtém o valor da coluna "valor" para a linha atual
+        char *valor = PQgetvalue(res, i, 0);
+        printf("\n%s", valor);
+    }
+
+    printf("\n");
+
+    PQclear(res);
 }
 
 int main(){
@@ -155,7 +135,7 @@ int main(){
                 break;
             case 2:
                 printf("A pilha tem:\n");
-                imprimir(pilha1);
+                imprimir(pilha1, conn);
                 break;
             case 3:
                 remover_Elemento(pilha1, conn);
