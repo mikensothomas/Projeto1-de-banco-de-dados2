@@ -16,13 +16,40 @@ void iniciar_pilha(PILHA *p){
     p->topo = NULL;
 }
 
-void inserir_elemento(PILHA *p, int elemento){
+// void inserir_elemento(PILHA *p, int elemento){
+//     NO *ptr = (NO*) malloc(sizeof(NO));
+
+//     if(ptr){
+//         ptr->dado = elemento;
+//         ptr->prox = p->topo;
+//         p->topo = ptr;
+//     } else {
+//         printf("Erro ao alocar memória.\n");
+//     }
+// }
+
+void inserir_elemento(PILHA *p, int elemento, PGconn *conn){
     NO *ptr = (NO*) malloc(sizeof(NO));
 
     if(ptr){
         ptr->dado = elemento;
         ptr->prox = p->topo;
         p->topo = ptr;
+
+        // Cria a string de comando SQL
+        char sql[256];
+        snprintf(sql, sizeof(sql), "INSERT INTO bancos2 (valor) VALUES (%d);", elemento);
+
+        // Executa o comando SQL
+        PGresult *res = PQexec(conn, sql);
+
+        // Verifica o resultado da execução
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "Erro ao inserir no banco de dados: %s\n", PQerrorMessage(conn));
+        }
+
+        // Libera o resultado
+        PQclear(res);
     } else {
         printf("Erro ao alocar memória.\n");
     }
@@ -85,7 +112,7 @@ int main(){
             case 1:
                 printf("Digite um número: ");
                 scanf("%d", &numero);
-                inserir_elemento(pilha1, numero);
+                inserir_elemento(pilha1, numero, conn);
                 break;
             case 2:
                 printf("A pilha tem:\n");
