@@ -36,35 +36,74 @@ void inserir_elemento(PILHA *p, int elemento, PGconn *conn){
         ptr->prox = p->topo;
         p->topo = ptr;
 
-        // Cria a string de comando SQL
         char sql[256];
         snprintf(sql, sizeof(sql), "INSERT INTO bancos2 (valor) VALUES (%d);", elemento);
 
-        // Executa o comando SQL
         PGresult *res = PQexec(conn, sql);
 
-        // Verifica o resultado da execução
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             fprintf(stderr, "Erro ao inserir no banco de dados: %s\n", PQerrorMessage(conn));
         }
 
-        // Libera o resultado
         PQclear(res);
     } else {
         printf("Erro ao alocar memória.\n");
     }
 }
 
-int remover_Elemento(PILHA *p){
+// int remover_Elemento(PILHA *p){
+//     int elemento;
+//     NO *ptr = p->topo;
+
+//     if(ptr){
+//        p->topo = p->topo->prox;
+//        ptr->prox = NULL;
+//        elemento = ptr->dado;
+//        free(ptr);
+//        return elemento;
+
+//        char sql[256];
+//         snprintf(sql, sizeof(sql), "INSERT INTO bancos2 (valor) VALUES (%d);", elemento);
+
+//         PGresult *res = PQexec(conn, sql);
+
+//         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+//             fprintf(stderr, "Erro ao inserir no banco de dados: %s\n", PQerrorMessage(conn));
+//         }
+
+//         PQclear(res);
+//     } else {
+//         printf("\nPilha vazia.\n");
+//         return 1;
+//     }
+// }
+
+int remover_Elemento(PILHA *p, PGconn *conn) {
     int elemento;
     NO *ptr = p->topo;
 
-    if(ptr){
-       p->topo = p->topo->prox;
-       ptr->prox = NULL;
-       elemento = ptr->dado;
-       free(ptr);
-       return elemento;
+    if (ptr) {
+        p->topo = p->topo->prox;
+        ptr->prox = NULL;
+        elemento = ptr->dado;
+        free(ptr);
+
+        // Cria a string de comando SQL para remover o elemento do banco de dados
+        char sql[256];
+        snprintf(sql, sizeof(sql), "DELETE FROM bancos2 WHERE valor = %d;", elemento);
+
+        // Executa o comando SQL
+        PGresult *res = PQexec(conn, sql);
+
+        // Verifica o resultado da execução
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "Erro ao remover do banco de dados: %s\n", PQerrorMessage(conn));
+        }
+
+        // Libera o resultado
+        PQclear(res);
+
+        return elemento;
     } else {
         printf("\nPilha vazia.\n");
         return 1;
@@ -119,7 +158,7 @@ int main(){
                 imprimir(pilha1);
                 break;
             case 3:
-                remover_Elemento(pilha1);
+                remover_Elemento(pilha1, conn);
                 break;
             default:
                 exit (0);
@@ -129,36 +168,7 @@ int main(){
     return 0;
 }
 
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <libpq-fe.h>
-
-// int main() {
-//     PGconn *conn = PQconnectdb("user=postgres dbname=projeto_banco2 password=170112345 hostaddr=127.0.0.1 port=5432");
-
-//     if (PQstatus(conn) == CONNECTION_BAD) {
-//         fprintf(stderr, "Conexão ao banco de dados falhou: %s\n", PQerrorMessage(conn));
-//         PQfinish(conn);
-//         exit(1);
-//     } else {
-//         fprintf(stderr, "Conexão feita com sucesso \n");
-//     }
-//     // Executar uma consulta
-//     PGresult *res = PQexec(conn, "SELECT version()");
-
-//     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-//         fprintf(stderr, "Falha na consulta: %s\n", PQerrorMessage(conn));
-//         PQclear(res);
-//         PQfinish(conn);
-//         exit(1);
-//     }
-
-//     // Imprimir o resultado
-//     // printf("Versão do PostgreSQL: %s\n", PQgetvalue(res, 0, 0));
-
-//     // Limpar e fechar a conexão
-//     PQclear(res);
-//     PQfinish(conn);
-
-//     return 0;
-// }
+// CREATE TABLE IF NOT EXISTS bancos2 (
+//     id SERIAL PRIMARY KEY,
+//     valor INT
+// );
